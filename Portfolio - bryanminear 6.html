@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lens By RAM</title>
+    <style>
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
+body {
+font-family: 'Arial', sans-serif;
+line-height: 1.6;
+color: #333;
+background-color: #f5f5f5;
+font-weight: 400;
+transition: all 0.5s ease;
+}
+body.dark-mode {
+background-color: #0a0a0a;
+color: #fff;
+}
+.container {
+max-width: 1400px;
+margin: 0 auto;
+padding: 0 40px;
+}
+
+header {
+background: transparent;
+position: fixed;
+width: 100%;
+top: 0;
+z-index: 1000;
+transition: all 0.3s ease;
+padding: 20px 0;
+}
+header.scrolled {
+background: rgba(245, 245, 245, 0.95);
+backdrop-filter: blur(10px);
+}
+body.dark-mode header.scrolled {
+background: rgba(10, 10, 10, 0.95);
+}
+nav {
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.logo {
+font-size: 24px;
+font-weight: 300;
+color: #000;
+text-decoration: none;
+letter-spacing: 2px;
+transition: color 0.3s ease;
+}
+body.dark-mode .logo {
+color: #fff;
+}
+.nav-links {
+display: flex;
+list-style: none;
+gap: 40px;
+}
+.nav-links a {
+text-decoration: none;
+color: #000;
+font-weight: 400;
+font-size: 14px;
+letter-spacing: 1px;
+text-transform: uppercase;
+transition: opacity 0.3s ease;
+}
+body.dark-mode .nav-links a {
+color: #fff;
+}
+.nav-links a:hover {
+opacity: 0.6;
+}
+.nav-icons {
+display: flex;
+gap: 20px;
+align-items: center;
+}
+.nav-icon {
+width: 20px;
+height: 20px;
+background: #000;
+cursor: pointer;
+transition: opacity 0.3s ease;
+}
+body.dark-mode .nav-icon {
+background: #fff;
+}
+.nav-icon:hover {
+opacity: 0.6;
+}
+
+.sidebar {
+position: fixed;
+left: 20px;
+top: 50%;
+transform: translateY(-50%);
+z-index: 100;
+display: flex;
+flex-direction: column;
+gap: 30px;
+}
+.sidebar-item {
+writing-mode: vertical-lr;
+text-orientation: mixed;
+font-size: 12px;
+letter-spacing: 2px;
+color: #666;
+text-transform: uppercase;
+cursor: pointer;
+transition: color 0.3s ease;
+}
+.sidebar-item:hover {
+color: #000;
+}
+body.dark-mode .sidebar-item:hover {
+color: #fff;
+}
+.sidebar-item.active {
+color: #000;
+font-weight: 600;
+}
+body.dark-mode .sidebar-item.active {
+color: #fff;
+}
+
+.right-sidebar {
+position: fixed;
+right: 20px;
+top: 50%;
+transform: translateY(-50%);
+z-index: 100;
+display: flex;
+flex-direction: column;
+gap: 30px;
+}
+.social-link {
+writing-mode: vertical-lr;
+text-orientation: mixed;
+font-size: 12px;
+letter-spacing: 2px;
+color: #666;
+text-transform: uppercase;
+text-decoration: none;
+cursor: pointer;
+transition: color 0.3s ease;
+}
+.social-link:hover {
+color: #000;
+}
+body.dark-mode .social-link:hover {
+color: #fff;
+}
+
+.hero {
+min-height: 100vh;
+display: flex;
+align-items: center;
+justify-content: center;
+text-align: center;
+padding: 120px 0 80px;
+}
+.hero-content {
+max-width: 1000px;
+}
+.hero h1 {
+font-size: clamp(2.5rem, 8vw, 6rem);
+font-weight: 900;
+color: #000;
+line-height: 0.9;
+margin-bottom: 40px;
+text-transform: uppercase;
+letter-spacing: -2px;
+transition: color 0.3s ease;
+}
+body.dark-mode .hero h1 {
+color: #fff;
+}
+.hero .subtitle {
+font-size: clamp(1.2rem, 3vw, 2.5rem);
+font-weight: 300;
+color: #999;
+line-height: 1.2;
+margin-bottom: 60px;
+text-transform: uppercase;
+letter-spacing: 1px;
+}
+.hero-buttons {
+display: flex;
+gap: 60px;
+justify-content: center;
+margin-top: 80px;
+}
+.hero-button {
+font-size: 14px;
+letter-spacing: 2px;
+text-transform: uppercase;
+color: #000;
+text-decoration: none;
+font-weight: 400;
+padding: 20px 0;
+border-bottom: 2px solid #000;
+transition: all 0.3s ease;
+}
+body.dark-mode .hero-button {
+color: #fff;
+border-bottom-color: #fff;
+}
+.hero-button:hover {
+opacity: 0.6;
+}
+
+.portfolio {
+padding: 100px 0;
+background: #f5f5f5;
+transition: background 0.5s ease;
+}
+body.dark-mode .portfolio {
+background: #0a0a0a;
+}
+.section-title {
+text-align: center;
+font-size: clamp(2rem, 5vw, 4rem);
+font-weight: 900;
+color: #000;
+margin-bottom: 80px;
+text-transform: uppercase;
+letter-spacing: -1px;
+transition: color 0.3s ease;
+}
+body.dark-mode .section-title {
+color: #fff;
+}
+
+.portfolio-grid {
+columns: 3;
+column-gap: 20px;
+max-width: 1200px;
+margin: 0 auto;
+}
+.portfolio-item {
+width: 100%;
+margin-bottom: 20px;
+break-inside: avoid;
+cursor: grab;
+transition: all 0.4s ease;
+border-radius: 12px;
+overflow: hidden;
+position: relative;
+}
+.portfolio-item:hover {
+transform: translateY(-5px);
+}
+.portfolio-item.dragging {
+opacity: 0.5;
+transform: rotate(5deg) scale(0.95);
+cursor: grabbing;
+z-index: 1000;
+}
+.portfolio-item img {
+width: 100%;
+height: auto;
+display: block;
+}
+
+.drag-placeholder {
+background: rgba(0,0,0,0.1);
+border: 2px dashed #ccc;
+border-radius: 12px;
+margin-bottom: 20px;
+height: 200px;
+display: flex;
+align-items: center;
+justify-content: center;
+color: #999;
+font-size: 14px;
+text-transform: uppercase;
+letter-spacing: 1px;
+}
+
+.admin-page {
+display: none;
+min-height: 100vh;
+padding: 120px 0 80px;
+}
+.admin-page.active {
+display: block;
+}
+.drag-drop-area {
+border: 3px dashed #ccc;
+border-radius: 12px;
+padding: 60px;
+text-align: center;
+transition: all 0.3s ease;
+margin-bottom: 40px;
+}
+.drag-drop-area.dragover {
+border-color: #000;
+background: rgba(0,0,0,0.05);
+}
+body.dark-mode .drag-drop-area.dragover {
+border-color: #fff;
+background: rgba(255,255,255,0.05);
+}
+.drag-drop-text {
+font-size: 24px;
+color: #666;
+margin-bottom: 30px;
+font-weight: 300;
+}
+.file-input-wrapper {
+display: inline-block;
+background: #000;
+color: #fff;
+padding: 15px 30px;
+border-radius: 30px;
+cursor: pointer;
+transition: all 0.3s ease;
+font-size: 14px;
+letter-spacing: 1px;
+text-transform: uppercase;
+}
+body.dark-mode .file-input-wrapper {
+background: #fff;
+color: #000;
+}
+.file-input-wrapper:hover {
+opacity: 0.8;
+}
+.file-input-wrapper input[type=file] {
+position: absolute;
+left: -9999px;
+}
+.upload-status {
+margin-top: 30px;
+font-size: 16px;
+color: #666;
+}
+.back-to-portfolio {
+display: inline-block;
+margin-top: 40px;
+padding: 15px 30px;
+background: transparent;
+border: 2px solid #000;
+color: #000;
+text-decoration: none;
+border-radius: 30px;
+font-size: 14px;
+letter-spacing: 1px;
+text-transform: uppercase;
+transition: all 0.3s ease;
+}
+body.dark-mode .back-to-portfolio {
+border-color: #fff;
+color: #fff;
+}
+.back-to-portfolio:hover {
+background: #000;
+color: #fff;
+}
+body.dark-mode .back-to-portfolio:hover {
+background: #fff;
+color: #000;
+}
+
+.github-url-section {
+background: #fff;
+border: 2px solid #eee;
+border-radius: 12px;
+padding: 30px;
+margin-bottom: 40px;
+transition: all 0.3s ease;
+}
+body.dark-mode .github-url-section {
+background: #1a1a1a;
+border-color: #333;
+}
+.github-url-input {
+width: 100%;
+padding: 15px;
+border: 2px solid #ddd;
+border-radius: 8px;
+font-size: 16px;
+margin-bottom: 15px;
+transition: border-color 0.3s ease;
+}
+body.dark-mode .github-url-input {
+background: #2a2a2a;
+border-color: #444;
+color: #fff;
+}
+.github-url-input:focus {
+outline: none;
+border-color: #000;
+}
+body.dark-mode .github-url-input:focus {
+border-color: #fff;
+}
+.add-github-btn {
+background: #000;
+color: #fff;
+border: none;
+padding: 15px 30px;
+border-radius: 8px;
+cursor: pointer;
+font-size: 14px;
+letter-spacing: 1px;
+text-transform: uppercase;
+transition: all 0.3s ease;
+}
+body.dark-mode .add-github-btn {
+background: #fff;
+color: #000;
+}
+.add-github-btn:hover {
+opacity: 0.8;
+}
+.url-help {
+font-size: 14px;
+color: #666;
+margin-top: 10px;
+line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+.container {
+padding: 0 20px;
+}
+.nav-links {
+display: none;
+}
+.portfolio-grid {
+columns: 1;
+}
+.sidebar,
+.right-sidebar {
+display: none;
+}
+.hero-buttons {
+flex-direction: column;
+align-items: center;
+gap: 30px;
+}
+.drag-drop-area {
+padding: 40px 20px;
+}
+.drag-drop-text {
+font-size: 18px;
+}
+.github-url-section {
+padding: 20px;
+}
+}
+@media (max-width: 1024px) {
+.portfolio-grid {
+columns: 2;
+}
+}
+
+html {
+scroll-behavior: smooth;
+}
+
+.portfolio-item {
+opacity: 0;
+transform: translateY(30px);
+animation: fadeInUp 0.8s ease forwards;
+}
+@keyframes fadeInUp {
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+</style>
+</head>
+<body>
+    <header id="header">
+        <nav class="container">
+            <a href="#" class="logo">SR</a>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#prints">Prints</a></li>
+                <li><a href="#journal">Journal</a></li>
+                <li><a href="#collections">Collections</a></li>
+                <li><a href="#portfolio">Portfolio</a></li>
+                <li><a href="#gear">Gear</a></li>
+                <li><a href="#admin" id="adminLink">Admin</a></li>
+                <li><a href="#about">About</a></li>
+            </ul>
+            <div class="nav-icons">
+                <div class="nav-icon"></div>
+                <div class="nav-icon"></div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="sidebar">
+        <div class="sidebar-item">Dark</div>
+        <div class="sidebar-item">Light</div>
+    </div>
+
+    <div class="right-sidebar">
+        <a href="#" class="social-link">Instagram</a>
+        <a href="#" class="social-link">Twitter</a>
+    </div>
+
+    <!-- Main Portfolio Page -->
+    <div id="portfolioPage">
+        <section id="home" class="hero">
+            <div class="hero-content">
+                <h1>Hello, I'm Sreeram,</h1>
+                <p class="subtitle">Nikongrapher, Data Analyst & A Visual Storyteller Based in Chennai/Palakkad, India.</p>
+                <div class="hero-buttons">
+                    <a href="#portfolio" class="hero-button">View Portfolio</a>
+                    <a href="#collections" class="hero-button">View Collections</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="portfolio" class="portfolio">
+            <div class="container">
+                <h2 class="section-title">Recent Work</h2>
+                <div class="portfolio-grid" id="portfolioGrid">
+                    <!-- Images will be loaded here dynamically -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Admin Page -->
+    <div id="adminPage" class="admin-page">
+        <section class="portfolio">
+            <div class="container">
+                <h2 class="section-title">Upload Images</h2>
+                
+                <!-- GitHub URL Section -->
+                <div class="github-url-section">
+                    <h3 style="margin-bottom: 20px; font-size: 20px;">Add from GitHub</h3>
+                    <input type="text" id="githubUrlInput" class="github-url-input" 
+                           placeholder="Paste GitHub image URL here...">
+                    <button id="addGithubBtn" class="add-github-btn">Add GitHub Image</button>
+                    <div class="url-help">
+                        <strong>How to get the correct URL:</strong><br>
+                        1. Go to your GitHub repository<br>
+                        2. Click on the image file<br>
+                        3. Click "Raw" button<br>
+                        4. Copy the URL (should start with raw.githubusercontent.com)<br><br>
+                        <strong>Example:</strong> https://raw.githubusercontent.com/sreeram1658/lensbyram/main/jes_happy.jpg
+                    </div>
+                </div>
+                
+                <div class="drag-drop-area" id="dragDropArea">
+                    <div class="drag-drop-text">Drag and drop images here</div>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="imageInput" multiple accept="image/*">
+                        Or Click to Select Files
+                    </div>
+                    <div class="upload-status" id="uploadStatus">Ready to upload images</div>
+                </div>
+
+                <div style="text-align: center;">
+                    <a href="#portfolio" class="back-to-portfolio" id="backToPortfolio">Back to Portfolio</a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        class PortfolioManager {
+            constructor() {
+                this.images = [];
+                this.draggedItem = null;
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.loadInitialImages();
+            }
+
+            setupEventListeners() {
+                // Header scroll effect
+                window.addEventListener('scroll', () => {
+                    const header = document.getElementById('header');
+                    if (window.scrollY > 100) {
+                        header.classList.add('scrolled');
+                    } else {
+                        header.classList.remove('scrolled');
+                    }
+                });
+
+                // Page navigation
+                document.getElementById('adminLink').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.showAdminPage();
+                });
+
+                document.getElementById('backToPortfolio').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.showPortfolioPage();
+                });
+
+                // GitHub URL functionality
+                document.getElementById('addGithubBtn').addEventListener('click', () => {
+                    this.addGithubImage();
+                });
+
+                document.getElementById('githubUrlInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.addGithubImage();
+                    }
+                });
+
+                // Smooth scrolling for other links
+                document.querySelectorAll('a[href^="#"]:not(#adminLink)').forEach(anchor => {
+                    anchor.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const target = document.querySelector(this.getAttribute('href'));
+                        if (target) {
+                            target.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+                        }
+                    });
+                });
+
+                // Dark/Light mode toggle
+                const darkToggle = document.querySelector('.sidebar-item:first-child');
+                const lightToggle = document.querySelector('.sidebar-item:last-child');
+                lightToggle.classList.add('active');
+
+                darkToggle.addEventListener('click', () => {
+                    document.body.classList.add('dark-mode');
+                    darkToggle.classList.add('active');
+                    lightToggle.classList.remove('active');
+                });
+
+                lightToggle.addEventListener('click', () => {
+                    document.body.classList.remove('dark-mode');
+                    lightToggle.classList.add('active');
+                    darkToggle.classList.remove('active');
+                });
+
+                // File input
+                const fileInput = document.getElementById('imageInput');
+                fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+
+                // Drag and drop for admin page
+                const dragDropArea = document.getElementById('dragDropArea');
+                dragDropArea.addEventListener('click', () => fileInput.click());
+                dragDropArea.addEventListener('dragover', (e) => this.handleDragOver(e));
+                dragDropArea.addEventListener('drop', (e) => this.handleDrop(e));
+                dragDropArea.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+            }
+
+            convertGithubUrl(url) {
+                // Convert blob URL to raw URL
+                if (url.includes('github.com') && url.includes('/blob/')) {
+                    return url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+                }
+                // If it's already a raw URL, return as is
+                if (url.includes('raw.githubusercontent.com')) {
+                    return url;
+                }
+                return url;
+            }
+
+            addGithubImage() {
+                const urlInput = document.getElementById('githubUrlInput');
+                const url = urlInput.value.trim();
+                const uploadStatus = document.getElementById('uploadStatus');
+
+                if (!url) {
+                    uploadStatus.textContent = 'Please enter a GitHub URL';
+                    return;
+                }
+
+                // Convert the URL to raw format
+                const rawUrl = this.convertGithubUrl(url);
+                
+                // Extract filename from URL
+                const filename = rawUrl.split('/').pop() || 'github-image';
+                
+                // Check for duplicates
+                if (this.images.find(img => img.src === rawUrl)) {
+                    uploadStatus.textContent = 'Image already exists in portfolio';
+                    return;
+                }
+
+                // Test if the image loads
+                const testImg = new Image();
+                testImg.onload = () => {
+                    this.images.push({
+                        src: rawUrl,
+                        name: filename,
+                        id: this.generateId()
+                    });
+                    this.renderImages();
+                    uploadStatus.textContent = `Added image: ${filename}`;
+                    urlInput.value = '';
+                };
+
+                testImg.onerror = () => {
+                    uploadStatus.textContent = 'Failed to load image. Please check the URL.';
+                };
+
+                testImg.src = rawUrl;
+                uploadStatus.textContent = 'Loading image...';
+            }
+
+            showAdminPage() {
+                document.getElementById('portfolioPage').style.display = 'none';
+                document.getElementById('adminPage').classList.add('active');
+            }
+
+            showPortfolioPage() {
+                document.getElementById('adminPage').classList.remove('active');
+                document.getElementById('portfolioPage').style.display = 'block';
+            }
+
+            loadInitialImages() {
+                // Sample GitHub images from your repository
+                const githubImages = [
+                    'https://raw.githubusercontent.com/sreeram1658/lensbyram/main/jes_happy.jpg',
+                    // Add more GitHub raw URLs here
+                ];
+
+                githubImages.forEach(src => {
+                    this.images.push({ 
+                        src, 
+                        name: src.split('/').pop(),
+                        id: this.generateId()
+                    });
+                });
+
+                this.renderImages();
+            }
+
+            generateId() {
+                return Date.now() + Math.random().toString(36).substr(2, 9);
+            }
+
+            handleFileSelect(e) {
+                const files = Array.from(e.target.files);
+                this.addImages(files);
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                document.getElementById('dragDropArea').classList.add('dragover');
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                document.getElementById('dragDropArea').classList.remove('dragover');
+                const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+                this.addImages(files);
+            }
+
+            handleDragLeave(e) {
+                document.getElementById('dragDropArea').classList.remove('dragover');
+            }
+
+            addImages(files) {
+                let addedCount = 0;
+                const uploadStatus = document.getElementById('uploadStatus');
+                
+                files.forEach(file => {
+                    // Check for duplicates by name
+                    if (!this.images.find(img => img.name === file.name)) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            this.images.push({
+                                src: e.target.result,
+                                name: file.name,
+                                id: this.generateId()
+                            });
+                            addedCount++;
+                            uploadStatus.textContent = `Added ${addedCount} new images`;
+                            this.renderImages();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+
+                if (addedCount === 0) {
+                    uploadStatus.textContent = 'No new images added (duplicates ignored)';
+                }
+            }
+
+            setupImageDragAndDrop(item, imageData) {
+                item.draggable = true;
+                
+                item.addEventListener('dragstart', (e) => {
+                    this.draggedItem = imageData;
+                    item.classList.add('dragging');
+                });
+
+                item.addEventListener('dragend', (e) => {
+                    item.classList.remove('dragging');
+                    this.draggedItem = null;
+                    this.removePlaceholders();
+                });
+
+                item.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (this.draggedItem && this.draggedItem.id !== imageData.id) {
+                        this.showPlaceholder(item);
+                    }
+                });
+
+                item.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (this.draggedItem && this.draggedItem.id !== imageData.id) {
+                        this.reorderImages(this.draggedItem.id, imageData.id);
+                    }
+                });
+            }
+
+            showPlaceholder(targetItem) {
+                this.removePlaceholders();
+                const placeholder = document.createElement('div');
+                placeholder.className = 'drag-placeholder';
+                placeholder.textContent = 'Drop here';
+                targetItem.parentNode.insertBefore(placeholder, targetItem);
+            }
+
+            removePlaceholders() {
+                document.querySelectorAll('.drag-placeholder').forEach(p => p.remove());
+            }
+
+            reorderImages(draggedId, targetId) {
+                const draggedIndex = this.images.findIndex(img => img.id === draggedId);
+                const targetIndex = this.images.findIndex(img => img.id === targetId);
+                
+                if (draggedIndex !== -1 && targetIndex !== -1) {
+                    const draggedImage = this.images.splice(draggedIndex, 1)[0];
+                    this.images.splice(targetIndex, 0, draggedImage);
+                    this.renderImages();
+                }
+            }
+
+            renderImages() {
+                const grid = document.getElementById('portfolioGrid');
+                grid.innerHTML = '';
+                
+                this.images.forEach((image, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'portfolio-item';
+                    item.style.animationDelay = `${index * 0.1}s`;
+                    
+                    const img = document.createElement('img');
+                    img.src = image.src;
+                    img.alt = image.name;
+                    img.loading = 'lazy';
+                    
+                    this.setupImageDragAndDrop(item, image);
+                    
+                    item.appendChild(img);
+                    grid.appendChild(item);
+                });
+            }
+        }
+
+        // Initialize the portfolio manager when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new PortfolioManager();
+        });
+    </script>
+</body>
+</html>
