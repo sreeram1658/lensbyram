@@ -18,18 +18,30 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);display:flex;align-
 .chips button{border:0;background:var(--chip);color:var(--fg);font-size:14px;font-weight:600;font-family:inherit;padding:10px 16px;border-radius:24px;cursor:pointer;white-space:nowrap}
 .chips button.on{background:var(--chip-on);color:var(--bg)}
 header .ig{font-size:14px;font-weight:600;white-space:nowrap}
-.intro{padding:24px 20px 8px;text-align:center}
-.intro h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800}
-.intro p{margin-top:8px;color:var(--muted);font-size:15px}
+.intro{padding:16px 20px 4px;text-align:center}
+.intro h1{font-size:clamp(1.5rem,3.5vw,2.2rem);font-weight:800}
+.intro p{margin-top:6px;color:var(--muted);font-size:15px}
 main{padding:16px 16px 40px}
+body.home main{padding-bottom:16px}
+
+/* category pages: masonry */
 .grid{display:flex;gap:var(--gap);align-items:flex-start}
 .col{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--gap)}
+
+/* home: balanced rows that fit the window */
+.grid.home{flex-direction:column;align-items:center}
+.row{display:flex;gap:var(--gap)}
+.row .pin{flex:none}
+
 .pin{position:relative;display:block;border-radius:var(--r);overflow:hidden;cursor:zoom-in;background:var(--chip) center/cover no-repeat}
 .pin i{display:block}
 .pin img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .5s}
 .pin img.on{opacity:1}
+
 footer{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
 footer a:hover{color:var(--fg)}
+@media (min-width:641px){body.home footer{display:none}}
+
 .lb{position:fixed;inset:0;background:rgba(0,0,0,.95);display:none;align-items:center;justify-content:center;z-index:100}
 .lb.open{display:flex}
 .lb img{max-width:94vw;max-height:86vh;object-fit:contain;user-select:none;border-radius:8px;transition:opacity .25s}
@@ -78,6 +90,20 @@ const lbCap = document.getElementById('lbCap');
 
 const LABELS = { birds: 'Birds', wildlife: 'Wildlife & Macro', people: 'People', football: 'Football', landscapes: 'Landscapes', sky: 'Sky', places: 'Places' };
 
+// home page: best shots, in this order
+const FEATURED = [
+  'bird-parakeet-in-flight',
+  'wildlife-dragonfly-on-rope',
+  'people-child-peeking-through-leaves',
+  'people-grandmother-and-baby-bw-1',
+  'people-holi-face-neon-colours',
+  'people-tribal-man-portrait',
+  'people-woman-farmer-smiling',
+  'landscape-dudhsagar-falls-rail-bridge',
+  'landscape-lone-tree-pink-sky',
+  'place-railway-station-shadows'
+];
+
 let all = [], photos = [], pins = [], cat = null, cols = 0, cur = 0;
 
 document.getElementById('yr').textContent = new Date().getFullYear();
@@ -85,7 +111,27 @@ document.getElementById('yr').textContent = new Date().getFullYear();
 const colCount = () =>
   parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols')) || 3;
 
-// true masonry: each photo goes into the currently shortest column (left-to-right order)
+function makePin(p, i) {
+  const r = p.w / p.h;
+  const label = LABELS[p.category] || 'Photo';
+  const a = document.createElement('a');
+  a.className = 'pin';
+  a.href = `full/${p.id}.webp`;
+  a.style.backgroundImage = `url(${p.lqip})`;
+  const pad = document.createElement('i');
+  pad.style.paddingBottom = `${100 / r}%`;
+  const img = new Image();
+  img.loading = 'lazy'; img.decoding = 'async';
+  img.width = p.w; img.height = p.h;
+  img.alt = `${label} — photo by Sreeram R`;
+  img.onload = () => img.classList.add('on');
+  img.src = `thumbs/${p.id}.webp`;
+  a.append(pad, img);
+  a.addEventListener('click', e => { e.preventDefault(); openLb(i); });
+  return a;
+}
+
+// ---------- category pages: masonry (shortest column first) ----------
 function layout() {
   cols = colCount();
   grid.textContent = '';
@@ -103,35 +149,83 @@ function layout() {
   });
 }
 
-function render() {
-  photos = cat ? all.filter(p => p.category === cat) : all;
-  pins = photos.map((p, i) => {
-    const r = p.w / p.h;
-    const label = LABELS[p.category] || 'Photo';
-    const a = document.createElement('a');
-    a.className = 'pin';
-    a.href = `full/${p.id}.webp`;
-    a.style.backgroundImage = `url(${p.lqip})`;
-    const pad = document.createElement('i');
-    pad.style.paddingBottom = `${100 / r}%`;
-    const img = new Image();
-    img.loading = 'lazy'; img.decoding = 'async';
-    img.width = p.w; img.height = p.h;
-    img.alt = `${label} — photo by Sreeram R`;
-    img.onload = () => img.classList.add('on');
-    img.src = `thumbs/${p.id}.webp`;
-    a.append(pad, img);
-    a.addEventListener('click', e => { e.preventDefault(); openLb(i); });
-    return a;
+// ---------- home: balanced rows that fit the window ----------
+// split items (in order) into k rows with ratio-sums as equal as possible
+function partition(r, k) {
+  const n = r.length, pre = [0];
+  r.forEach(x => pre.push(pre[pre.length - 1] + x));
+  const avg = pre[n] / k;
+  const dp  = Array.from({ length: k + 1 }, () => new Array(n + 1).fill(Infinity));
+  const cut = Array.from({ length: k + 1 }, () => new Array(n + 1).fill(0));
+  dp[0][0] = 0;
+  for (let g = 1; g <= k; g++)
+    for (let j = g; j <= n; j++)
+      for (let i = g - 1; i < j; i++) {
+        const v = dp[g - 1][i] + (pre[j] - pre[i] - avg) ** 2;
+        if (v < dp[g][j]) { dp[g][j] = v; cut[g][j] = i; }
+      }
+  const rows = []; let j = n;
+  for (let g = k; g > 0; g--) {
+    const i = cut[g][j];
+    rows.unshift(Array.from({ length: j - i }, (_, x) => x + i));
+    j = i;
+  }
+  return rows;
+}
+
+function layoutHome() {
+  const W   = grid.clientWidth;
+  const gap = parseFloat(getComputedStyle(grid).columnGap) || 16;
+  const fit = innerWidth > 640;                       // desktop/tablet: no scroll
+  const H   = innerHeight - (grid.getBoundingClientRect().top + scrollY) - 16;
+  const r   = photos.map(p => p.w / p.h);
+  let best  = null;
+
+  for (let k = 1; k <= r.length; k++) {
+    const rows = partition(r, k);
+    const hs   = rows.map(row => (W - gap * (row.length - 1)) / row.reduce((s, i) => s + r[i], 0));
+    const sumH = hs.reduce((a, b) => a + b, 0);
+    const s    = fit ? Math.min(1, (H - gap * (k - 1)) / sumH) : 1;
+    if (s <= 0) continue;
+    const score = fit
+      ? hs.reduce((a, h, j) => a + rows[j].reduce((x, i) => x + (s * h) ** 2 * r[i], 0), 0)  // biggest photos that fit
+      : -Math.abs(sumH / k - 220);                                                           // phone: ~220px rows
+    if (!best || score > best.score) best = { rows, hs, s, score };
+  }
+
+  grid.textContent = '';
+  best.rows.forEach((row, j) => {
+    const h = best.hs[j] * best.s;
+    const div = document.createElement('div');
+    div.className = 'row';
+    row.forEach(i => { pins[i].style.width = `${Math.floor(h * r[i])}px`; div.append(pins[i]); });
+    grid.append(div);
   });
-  layout();
+}
+
+// ---------- render ----------
+function render() {
+  const home = !cat;
+  photos = home
+    ? FEATURED.map(id => all.find(p => p.id === id)).filter(Boolean)
+    : all.filter(p => p.category === cat);
+  document.body.classList.toggle('home', home);
+  grid.classList.toggle('home', home);
+  pins = photos.map(makePin);
+  home ? layoutHome() : layout();
   [...chips.children].forEach(b => b.classList.toggle('on', b.dataset.c === cat));
 }
 
-// re-flow only when the column count changes (no image reload)
-addEventListener('resize', () => { if (colCount() !== cols) layout(); }, { passive: true });
+let raf = 0;
+addEventListener('resize', () => {
+  cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(() => {
+    if (!cat) layoutHome();
+    else if (colCount() !== cols) layout();
+  });
+}, { passive: true });
 
-// logo -> all photos
+// logo -> home (best shots)
 document.getElementById('logo').addEventListener('click', e => {
   e.preventDefault();
   cat = null; render();
@@ -152,7 +246,7 @@ fetch('photos.json', { cache: 'no-cache' })
     render();
   });
 
-// lightbox (no file names)
+// ---------- lightbox (no file names) ----------
 function show(i) {
   cur = (i + photos.length) % photos.length;
   const p = photos[cur];
