@@ -11,6 +11,8 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
+
+/* header */
 header{position:sticky;top:0;z-index:10;background:var(--bg);display:flex;align-items:center;gap:20px;padding:12px 20px}
 .logo{font-weight:800;font-size:18px;white-space:nowrap;cursor:pointer}
 .chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;flex:1}
@@ -18,9 +20,12 @@ header{position:sticky;top:0;z-index:10;background:var(--bg);display:flex;align-
 .chips button{border:0;background:var(--chip);color:var(--fg);font-size:14px;font-weight:600;font-family:inherit;padding:10px 16px;border-radius:24px;cursor:pointer;white-space:nowrap}
 .chips button.on{background:var(--chip-on);color:var(--bg)}
 header .ig{font-size:14px;font-weight:600;white-space:nowrap}
+
+/* intro */
 .intro{padding:16px 20px 4px;text-align:center}
 .intro h1{font-size:clamp(1.5rem,3.5vw,2.2rem);font-weight:800}
 .intro p{margin-top:6px;color:var(--muted);font-size:15px}
+
 main{padding:16px 16px 40px}
 body.home main{padding-bottom:16px}
 
@@ -28,20 +33,23 @@ body.home main{padding-bottom:16px}
 .grid{display:flex;gap:var(--gap);align-items:flex-start}
 .col{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--gap)}
 
-/* home: balanced rows that fit the window */
+/* home: rows fitted to the window */
 .grid.home{flex-direction:column;align-items:center}
 .row{display:flex;gap:var(--gap)}
 .row .pin{flex:none}
 
+/* photo tile */
 .pin{position:relative;display:block;border-radius:var(--r);overflow:hidden;cursor:zoom-in;background:var(--chip) center/cover no-repeat}
 .pin i{display:block}
 .pin img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .5s}
 .pin img.on{opacity:1}
 
+/* footer */
 footer{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
 footer a:hover{color:var(--fg)}
 @media (min-width:641px){body.home footer{display:none}}
 
+/* lightbox */
 .lb{position:fixed;inset:0;background:rgba(0,0,0,.95);display:none;align-items:center;justify-content:center;z-index:100}
 .lb.open{display:flex}
 .lb img{max-width:94vw;max-height:86vh;object-fit:contain;user-select:none;border-radius:8px;transition:opacity .25s}
@@ -51,9 +59,16 @@ footer a:hover{color:var(--fg)}
 .lb .prev{left:8px;top:50%;transform:translateY(-50%)}
 .lb .next{right:8px;top:50%;transform:translateY(-50%)}
 .lb .cap{position:absolute;bottom:18px;left:0;right:0;text-align:center;font-size:13px;color:#aaa}
+
 @media (max-width:1400px){:root{--cols:4}}
 @media (max-width:1000px){:root{--cols:3}}
-@media (max-width:640px){:root{--cols:2;--gap:8px;--r:12px}header{padding:10px 12px;gap:10px}header .ig{display:none}main{padding:8px}.lb .prev,.lb .next{display:none}}
+@media (max-width:640px){
+  :root{--cols:2;--gap:8px;--r:12px}
+  header{padding:10px 12px;gap:10px}
+  header .ig{display:none}
+  main{padding:8px}
+  .lb .prev,.lb .next{display:none}
+}
 </style>
 </head>
 <body>
@@ -111,6 +126,7 @@ document.getElementById('yr').textContent = new Date().getFullYear();
 const colCount = () =>
   parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols')) || 3;
 
+// ---------- photo tile ----------
 function makePin(p, i) {
   const r = p.w / p.h;
   const label = LABELS[p.category] || 'Photo';
@@ -125,7 +141,7 @@ function makePin(p, i) {
   img.width = p.w; img.height = p.h;
   img.alt = `${label} — photo by Sreeram R`;
   img.onload = () => img.classList.add('on');
-  img.src = `thumbs/${p.id}.webp`;
+  img.src = cat ? `thumbs/${p.id}.webp` : `full/${p.id}.webp`;   // home uses full-res
   a.append(pad, img);
   a.addEventListener('click', e => { e.preventDefault(); openLb(i); });
   return a;
@@ -143,13 +159,15 @@ function layout() {
   });
   const hts = new Array(cols).fill(0);
   pins.forEach((a, i) => {
+    a.style.width = '';
+    a.querySelector('i').style.paddingBottom = `${100 * photos[i].h / photos[i].w}%`;
     const k = hts.indexOf(Math.min(...hts));
     colEls[k].append(a);
     hts[k] += photos[i].h / photos[i].w + 0.05;
   });
 }
 
-// ---------- home: balanced rows that fit the window ----------
+// ---------- home: balanced rows fitted to the window ----------
 // split items (in order) into k rows with ratio-sums as equal as possible
 function partition(r, k) {
   const n = r.length, pre = [0];
@@ -174,35 +192,34 @@ function partition(r, k) {
 }
 
 function layoutHome() {
-  const W   = grid.clientWidth;
-  const gap = parseFloat(getComputedStyle(grid).columnGap) || 16;
-  const fit = innerWidth > 640;                       // desktop/tablet: fill the window, no scroll
-  const H   = innerHeight - (grid.getBoundingClientRect().top + scrollY) - 16;
-  const r   = photos.map(p => p.w / p.h);
-  let best  = null;
+  const W    = grid.clientWidth;
+  const gap  = parseFloat(getComputedStyle(grid).columnGap) || 16;
+  const fit  = innerWidth > 640;                      // desktop/tablet: no scroll
+  const H    = innerHeight - (grid.getBoundingClientRect().top + scrollY) - 16;
+  const r    = photos.map(p => p.w / p.h);
+  const MAXC = 1.08, MINC = 0.92;                     // max 8% crop per photo
+  let best   = null;
 
   for (let k = 1; k <= r.length; k++) {
     const rows = partition(r, k);
     const hs   = rows.map(row => (W - gap * (row.length - 1)) / row.reduce((s, i) => s + r[i], 0));
     const sumH = hs.reduce((a, b) => a + b, 0);
-    const f    = fit ? (H - gap * (k - 1)) / sumH : 1;   // stretch factor to fill height exactly
+    const f    = fit ? (H - gap * (k - 1)) / sumH : 1;
     if (f <= 0) continue;
-    const score = fit
-      ? -Math.abs(Math.log(f))                           // least cropping wins
-      : -Math.abs(sumH / k - 220);                       // phone: ~220px rows, scroll
+    const score = fit ? -Math.abs(Math.log(f)) : -Math.abs(sumH / k - 220);  // phone: ~220px rows
     if (!best || score > best.score) best = { rows, hs, f, score };
   }
 
+  const fc = Math.min(MAXC, Math.max(MINC, best.f));  // crop actually applied
+  const s  = best.f < MINC ? best.f / MINC : 1;       // shrink evenly if still too tall
+
   grid.textContent = '';
   best.rows.forEach((row, j) => {
-    const h     = Math.floor(best.hs[j] * best.f);
-    const avail = W - gap * (row.length - 1);
-    let used = 0;
+    const h   = Math.floor(best.hs[j] * fc * s);
     const div = document.createElement('div');
     div.className = 'row';
-    row.forEach((i, x) => {
-      const w = x === row.length - 1 ? avail - used : Math.floor(best.hs[j] * r[i]);
-      used += w;
+    row.forEach(i => {
+      const w = Math.floor(best.hs[j] * r[i] * s);
       pins[i].style.width = `${w}px`;
       pins[i].querySelector('i').style.paddingBottom = `${(h / w) * 100}%`;
       div.append(pins[i]);
@@ -233,7 +250,7 @@ addEventListener('resize', () => {
   });
 }, { passive: true });
 
-// logo -> home (best shots)
+// logo -> home
 document.getElementById('logo').addEventListener('click', e => {
   e.preventDefault();
   cat = null; render();
